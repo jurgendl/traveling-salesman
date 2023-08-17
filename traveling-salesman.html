@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+	https://en.wikipedia.org/wiki/Graph_theory
+	https://mathjs.org/docs/datatypes/matrices.html
+	https://cdnjs.com/libraries/mathjs
+-->
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Traveling Salesman</title>
+	<link src="traveling-salesman.css">
+</head>
+</head>
+
+<body>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.9.1/math.js" integrity="sha512-iC7V/1gOwGXzYGJ9f860Jq9K/YrL+AsSI7k/03F98EkX1GEsP2VjWdHgWpwhinDTe+HGznwCnVdR2d/o2In9bA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<script src="traveling-salesman.js"></script>
+	<script>
+		const graph = new Graph();
+		const node1 = graph.add(new Vertex('node1'));
+		const node2 = graph.add(new Vertex('node2'));
+		const node3 = graph.add(new Vertex('node3'));
+		graph.add(new Edge(node1, node2, .5));
+		graph.add(new Edge(node1, node3, 1.5));
+		graph.add(new Edge(node2, node3, 3.3));
+		console.log(graph);
+	</script>
+</body>
+
+</html>
