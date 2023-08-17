@@ -7,6 +7,14 @@ class Graph {
         this.vertices = [];
     }
 
+    indexOfEdge(edge) {
+        return this.edges.indexOf(edge);
+    }
+
+    indexOfVertex(vertex) {
+        return this.vertices.indexOf(vertex);
+    }
+
     addVertex(name) {
         const vertex = new Vertex(name);
         this.vertices.push(vertex);
