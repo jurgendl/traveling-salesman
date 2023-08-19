@@ -1,75 +1,86 @@
-class Graph {
-    edges;
-    vertices;
+const graph = new Graph();
+const inset = 50;
+const randomNodes = 50;
+const randomEdges = 40;
+const w = 1024;
+const h = 768;
+const rw = w - (inset * 2);
+const rh = h - (inset * 2);
+const rr = 30;
+const fps = 1;
+let withArrayXY = { arrayXY: [] };
+let solved = false;
 
-    constructor() {
-        this.edges = [];
-        this.vertices = [];
+function setup() {
+    createCanvas(w, h);
+
+    frameRate(fps);
+
+    for (var i = 0; i < randomNodes; i++) {
+        const vertex = graph.addVertex('' + i);
+        vertex.x = Math.random() * rw;
+        vertex.y = Math.random() * rh;
     }
 
-    indexOfEdge(edge) {
-        return this.edges.indexOf(edge);
-    }
+    /*for (var i = 0; i < randomEdges; i++) {
+        const startpoint = graph.vertices[Math.floor(Math.random() * graph.vertices.length)];
+        const endpoint = graph.vertices[Math.floor(Math.random() * graph.vertices.length)];
+        graph.addEdge(startpoint, endpoint, Math.random() * 10);
+    }*/
 
-    indexOfVertex(vertex) {
-        return this.vertices.indexOf(vertex);
-    }
+    //console.log(JSON.stringify(graph, null, "\t"));
 
-    addVertex(name) {
-        const vertex = new Vertex(name);
-        this.vertices.push(vertex);
-        return vertex;
-    }
+    withArrayXY.arrayXY = graph.vertices.slice();
 
-    removeVertex(vertex) {
-        this.vertices = this.vertices.filter(v => v !== vertex);
-        vertex.outgoingEdges.forEach(e => this.removeEdge(e));
-        vertex.incomingEdges.forEach(e => this.removeEdge(e));
-    }
-
-    removeEdge(edge) {
-        this.edges = this.edges.filter(e => e !== edge);
-        edge.startpoint.outgoingEdges = edge.startpoint.outgoingEdges.filter(e => e !== edge);
-        edge.endpoint.incomingEdges = edge.endpoint.incomingEdges.filter(e => e !== edge);
-    }
-
-    addEdge(startpoint, endpoint, weight) {
-        const edge = new Edge(startpoint, endpoint, weight);
-        this.edges.push(edge);
-        startpoint.outgoingEdges.push(edge);
-        endpoint.incomingEdges.push(edge);
-        return edge;
-    }
-
-    vertexByName(name) {
-        return this.vertices.find(v => v.name === name);
-    }
-
-    edgeByVertices(startpoint, endpoint) {
-        return this.edges.find(e => e.startpoint === startpoint && e.endpoint === endpoint);
-    }
+    // wait a second before starting
+    delay(1000).then(() => {
+        // wait 0.1 second between each step
+        calculateBestOrder(withArrayXY, 100);
+        // done
+        solved = true;
+    });
 }
 
-class Vertex {
-    name;
-    outgoingEdges;
-    incomingEdges;
+function draw() {
+    strokeWeight(2);
+    background(0);
 
-    constructor(name) {
-        this.name = name;
-        this.outgoingEdges = [];
-        this.incomingEdges = [];
+    noFill();
+    beginShape();
+    let distance = 0;
+    for (var i = 0; i < withArrayXY.arrayXY.length - 1; i++) {
+        const from = withArrayXY.arrayXY[i];
+        const to = withArrayXY.arrayXY[i + 1];
+        distance += euclideanDistance(from, to);
+        stroke(255 / withArrayXY.arrayXY.length * i, 0, 255);
+        line(inset + from.x, inset + from.y, inset + to.x, inset + to.y);
     }
-}
+    endShape();
 
-class Edge {
-    startpoint;
-    endpoint;
-    weight;
+    stroke(255);
+    strokeWeight(1);
+    fill(255);
+    textSize(28);
+    textAlign(CENTER, CENTER);
+    text('' + (Math.round(distance * 100) / 100), 70, 24);
 
-    constructor(startpoint, endpoint, weight) {
-        this.startpoint = startpoint;
-        this.endpoint = endpoint;
-        this.weight = weight ? weight : 1;
+    fill(0);
+    for (var i = 0; i < withArrayXY.arrayXY.length; i++) {
+        const vertex = withArrayXY.arrayXY[i];
+        ellipse(inset + vertex.x, inset + vertex.y, rr, rr);
+    }
+    noFill();
+    stroke(255);
+    for (var i = 0; i < withArrayXY.arrayXY.length; i++) {
+        const vertex = withArrayXY.arrayXY[i];
+        ellipse(inset + vertex.x, inset + vertex.y, rr, rr);
+    }
+
+    strokeWeight(1);
+    textSize(12);
+    textAlign(CENTER, CENTER);
+    for (var i = 0; i < graph.vertices.length; i++) {
+        const vertex = graph.vertices[i];
+        text('' + i, inset + vertex.x, inset + vertex.y);
     }
 }
