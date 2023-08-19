@@ -58,32 +58,48 @@ class Graph {
         this.vertices = [];
     }
 
+    /* The `indexOfEdge` method in the `Graph` class is used to find the index of a specific edge in
+    the `edges` array of the graph. It takes one parameter `edge`, which represents the edge to be
+    found. The method searches through the `edges` array and returns the index of the first
+    occurrence of the specified edge. If the edge is not found, the method returns -1. */
     indexOfEdge(edge) {
         return this.edges.indexOf(edge);
     }
 
+    /* The `indexOfVertex` method in the `Graph` class is used to find the index of a vertex in the
+    `vertices` array of the graph. It takes one parameter `vertex`, which represents the vertex to
+    be found. The method searches through the `vertices` array and returns the index of the first
+    occurrence of the specified vertex. If the vertex is not found, the method returns -1. */
     indexOfVertex(vertex) {
         return this.vertices.indexOf(vertex);
     }
 
+    /* The `addVertex` method in the `Graph` class is used to add a vertex to the graph. It takes one
+    parameter `name`, which represents the name or identifier of the vertex. */
     addVertex(name) {
         const vertex = new Vertex(name);
         this.vertices.push(vertex);
         return vertex;
     }
 
+    /* The `removeVertex` method in the `Graph` class is used to remove a vertex from the graph. It
+    takes one parameter `vertex`, which represents the vertex to be removed. */
     removeVertex(vertex) {
         this.vertices = this.vertices.filter(v => v !== vertex);
         vertex.outgoingEdges.forEach(e => this.removeEdge(e));
         vertex.incomingEdges.forEach(e => this.removeEdge(e));
     }
 
+    /* The `removeEdge` method in the `Graph` class is used to remove an edge from the graph. It takes
+    one parameter `edge`, which represents the edge to be removed. */
     removeEdge(edge) {
         this.edges = this.edges.filter(e => e !== edge);
         edge.startpoint.outgoingEdges = edge.startpoint.outgoingEdges.filter(e => e !== edge);
         edge.endpoint.incomingEdges = edge.endpoint.incomingEdges.filter(e => e !== edge);
     }
 
+    /* The `addEdge` method in the `Graph` class is used to add an edge to the graph. It takes three
+    parameters: `startpoint`, `endpoint`, and `weight`. */
     addEdge(startpoint, endpoint, weight) {
         const edge = new Edge(startpoint, endpoint, weight);
         this.edges.push(edge);
@@ -92,10 +108,17 @@ class Graph {
         return edge;
     }
 
+    /* The `vertexByName` method in the `Graph` class is used to find a vertex in the graph based on
+    its name. It takes one parameter `name`, which represents the name of the vertex. The method
+    searches through the `vertices` array of the graph and returns the first vertex that has a
+    matching name. If no vertex with the specified name is found, the method returns `undefined`. */
     vertexByName(name) {
         return this.vertices.find(v => v.name === name);
     }
 
+    /* The `edgeByVertices` method in the `Graph` class is used to find an edge in the graph based on
+    its startpoint and endpoint vertices. It takes two parameters `startpoint` and `endpoint`, which
+    represent the startpoint and endpoint vertices of the edge. */
     edgeByVertices(startpoint, endpoint) {
         return this.edges.find(e => e.startpoint === startpoint && e.endpoint === endpoint);
     }
