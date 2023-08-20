@@ -1,18 +1,18 @@
-import * as common from './traveling-salesman-common.js';
+import { TravelingSalesman, delay as waitFor } from './traveling-salesman-common.js';
 
-const traveler = new common.TravelingSalesman();
+const traveler = new TravelingSalesman();
 
 const sketchConfig = {
-    fps: 1,
-    randomNodes: 6,
+    fps: 60,
+    randomNodes: 10,
     dotRadius: 30,
     sketchInset: 50,
     sketchW: 1024,
     sketchH: 768,
-    rw: 1024 - (50 * 2),
-    rh: 768 - (50 * 2),
-    delay: 1000,
-    stepDelay: 100,
+    rw: 1024/*sketchW*/ - (50/*sketchInset*/ * 2),
+    rh: 768/*sketchH*/ - (50/*sketchInset*/ * 2),
+    delay: 2000, // delay beofre solving
+    stepDelay: 100, // delay between steps during solving
 };
 
 function setup() {
@@ -26,21 +26,16 @@ function setup() {
     }
     console.log(traveler.graph);
 
-    traveler.calculateDistances();
-    const distanceMatrix = traveler.convertDistancesToMatrix();
+    traveler.calculateDistanceEdges();
+    const distanceMatrix = traveler.convertDistanceEdgesToMatrix();
     console.log(distanceMatrix);
     console.log(JSON.stringify(distanceMatrix._data, null, "\t"));
 
-    //const m = [vertices.length][vertices.length];
-    //console.log(JSON.stringify(m, null, "\t"));
+    traveler.arrayXY = traveler.graph.vertices.slice();
 
     // wait a second before starting
-    common.delay(sketchConfig.delay).then(() => {
-        traveler.arrayXY = traveler.graph.vertices.slice();
-        // wait 0.1 seconds (stepDelay) between each step
-        common.solveTravelinsSalesmanProblem(traveler, sketchConfig.stepDelay);
-        traveler.solved = true;
-    });
+    // wait 0.1 seconds (stepDelay) between each step
+    waitFor(sketchConfig.delay).then(() => traveler.solve(sketchConfig.stepDelay));
 }
 
 function draw() {
@@ -53,8 +48,11 @@ function draw() {
     for (var i = 0; i < traveler.arrayXY.length - 1; i++) {
         const from = traveler.arrayXY[i];
         const to = traveler.arrayXY[i + 1];
-        distance += common.euclideanDistance(from, to);
-        stroke(255 / traveler.arrayXY.length * i, 0, 255);
+        distance += traveler.cachedEuclideanDistance(from, to);
+        const r = 255 / traveler.arrayXY.length * i;
+        const g = 255 - r;
+        const b = 0;
+        stroke(r, g, b);
         line(sketchConfig.sketchInset + from.x, sketchConfig.sketchInset + from.y, sketchConfig.sketchInset + to.x, sketchConfig.sketchInset + to.y);
     }
     endShape();
