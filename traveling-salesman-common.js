@@ -1,3 +1,47 @@
+export { euclideanDistance, delay, solveTravelinsSalesmanProblem, Graph, Vertex, Edge, TravelingSalesman };
+
+class TravelingSalesman {
+    /*const*/ graph = new Graph();
+    /*const*/ arrayXY = [];
+    /*let*/ solved = false;
+    /*let*/ distanceMatrix = null;
+
+    /*function*/ calculateDistances() {
+        for (var i = 0; i < this.graph.vertices.length; i++) {
+            const v = this.graph.vertices[i];
+            this.graph.addEdge(v, v, 0);
+        }
+        for (var i = 0; i < this.graph.vertices.length; i++) {
+            const from = this.graph.vertices[i];
+            for (var j = 0; j < i; j++) {
+                const to = this.graph.vertices[j];
+                const distance = euclideanDistance(from, to);
+                this.graph.addEdge(from, to, distance);
+                this.graph.addEdge(to, from, distance);
+            }
+        }
+    }
+
+    /*function*/ convertDistancesToMatrix() {
+        this.distanceMatrix = [];
+        for (var i = 0; i < this.graph.vertices.length; i++) {
+            const row = [];
+            const from = this.graph.vertices[i];
+            for (var j = 0; j < this.graph.vertices.length; j++) {
+                const to = this.graph.vertices[j];
+                if (from === to) {
+                    row.push(0);
+                } else {
+                    const edge = this.graph.getEdge(from, to);
+                    row.push(edge ? edge.weight : Infinity);
+                }
+            }
+            this.distanceMatrix.push(row);
+        }
+        return math.matrix(this.distanceMatrix);
+    }
+}
+
 /* The `euclideanDistance` function calculates the Euclidean distance between two points in a
 two-dimensional space. It takes two parameters `from` and `to`, which represent the
 coordinates of the two points. The function uses the formula `Math.sqrt(Math.pow(from.x -
@@ -5,7 +49,7 @@ to.x, 2) + Math.pow(from.y - to.y, 2))` to calculate the distance. It subtracts 
 x-coordinates and y-coordinates of the two points, squares the differences, adds them
 together, and then takes the square root of the sum to get the Euclidean distance. */
 function euclideanDistance(from, to) {
-    return Math.sqrt(Math.pow(from.x - to.x, 2) + Math.pow(from.y - to.y, 2));
+    return sqrt(pow(from.x - to.x, 2) + pow(from.y - to.y, 2));
 }
 
 /* The `delay` function is a helper function that returns a promise that resolves after a
@@ -22,27 +66,27 @@ minimizing the total distance traveled. It does this by iteratively selecting th
 nearest vertex to the current vertex and adding it to a new ordered array. The
 function uses the `euclideanDistance` function to calculate the distance between two
 vertices. The process continues until all vertices have been visited. */
-async function calculateBestOrder(withArrayXY, stepWait = -1) {
+async function solveTravelinsSalesmanProblem(axy, stepDelay = -1) {
     const newOrder = [];
-    const start = withArrayXY.arrayXY[0];
+    const start = axy.arrayXY[0];
     newOrder.push(start);
-    withArrayXY.arrayXY.splice(0, 1);
-    while (withArrayXY.arrayXY.length > 0) {
+    axy.arrayXY.splice(0, 1);
+    while (axy.arrayXY.length > 0) {
         let nearest = null;
         let nearestDistance = Number.MAX_VALUE;
-        for (var i = 0; i < withArrayXY.arrayXY.length; i++) {
-            const distance = euclideanDistance(newOrder[newOrder.length - 1], withArrayXY.arrayXY[i]);
+        for (var i = 0; i < axy.arrayXY.length; i++) {
+            const distance = euclideanDistance(newOrder[newOrder.length - 1], axy.arrayXY[i]);
             if (distance < nearestDistance) {
-                nearest = withArrayXY.arrayXY[i];
+                nearest = axy.arrayXY[i];
                 nearestDistance = distance;
             }
         }
-        if (stepWait && stepWait > 0) await delay(stepWait);
+        if (stepDelay && stepDelay > 0) await delay(stepDelay);
         newOrder.push(nearest);
-        withArrayXY.arrayXY.splice(withArrayXY.arrayXY.indexOf(nearest), 1);
+        axy.arrayXY.splice(axy.arrayXY.indexOf(nearest), 1);
     }
-    withArrayXY.arrayXY = newOrder;
-    return withArrayXY.arrayXY;
+    axy.arrayXY = newOrder;
+    return axy.arrayXY;
 }
 
 /* The `class Graph` is a representation of a graph data structure. It has properties `edges` and
@@ -90,14 +134,6 @@ class Graph {
         vertex.incomingEdges.forEach(e => this.removeEdge(e));
     }
 
-    /* The `removeEdge` method in the `Graph` class is used to remove an edge from the graph. It takes
-    one parameter `edge`, which represents the edge to be removed. */
-    removeEdge(edge) {
-        this.edges = this.edges.filter(e => e !== edge);
-        edge.startpoint.outgoingEdges = edge.startpoint.outgoingEdges.filter(e => e !== edge);
-        edge.endpoint.incomingEdges = edge.endpoint.incomingEdges.filter(e => e !== edge);
-    }
-
     /* The `addEdge` method in the `Graph` class is used to add an edge to the graph. It takes three
     parameters: `startpoint`, `endpoint`, and `weight`. */
     addEdge(startpoint, endpoint, weight) {
@@ -108,6 +144,14 @@ class Graph {
         return edge;
     }
 
+    /* The `removeEdge` method in the `Graph` class is used to remove an edge from the graph. It takes
+    one parameter `edge`, which represents the edge to be removed. */
+    removeEdge(edge) {
+        this.edges = this.edges.filter(e => e !== edge);
+        edge.startpoint.outgoingEdges = edge.startpoint.outgoingEdges.filter(e => e !== edge);
+        edge.endpoint.incomingEdges = edge.endpoint.incomingEdges.filter(e => e !== edge);
+    }
+
     /* The `vertexByName` method in the `Graph` class is used to find a vertex in the graph based on
     its name. It takes one parameter `name`, which represents the name of the vertex. The method
     searches through the `vertices` array of the graph and returns the first vertex that has a
@@ -116,11 +160,21 @@ class Graph {
         return this.vertices.find(v => v.name === name);
     }
 
+    /* alias for `vertexByName` */
+    getVertex(name) {
+        return this.vertexByName(name);
+    }
+
     /* The `edgeByVertices` method in the `Graph` class is used to find an edge in the graph based on
     its startpoint and endpoint vertices. It takes two parameters `startpoint` and `endpoint`, which
     represent the startpoint and endpoint vertices of the edge. */
     edgeByVertices(startpoint, endpoint) {
         return this.edges.find(e => e.startpoint === startpoint && e.endpoint === endpoint);
+    }
+
+    /* alias for `edgeByVertices` */
+    getEdge(startpoint, endpoint) {
+        return this.edgeByVertices(startpoint, endpoint);
     }
 }
 

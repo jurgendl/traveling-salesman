@@ -1,43 +1,45 @@
-const graph = new Graph();
-const inset = 50;
-const randomNodes = 50;
-const randomEdges = 40;
-const w = 1024;
-const h = 768;
-const rw = w - (inset * 2);
-const rh = h - (inset * 2);
-const rr = 30;
-const fps = 1;
-let withArrayXY = { arrayXY: [] };
-let solved = false;
+import * as common from './traveling-salesman-common.js';
+
+const traveler = new common.TravelingSalesman();
+
+const sketchConfig = {
+    fps: 1,
+    randomNodes: 6,
+    dotRadius: 30,
+    sketchInset: 50,
+    sketchW: 1024,
+    sketchH: 768,
+    rw: 1024 - (50 * 2),
+    rh: 768 - (50 * 2),
+    delay: 1000,
+    stepDelay: 100,
+};
 
 function setup() {
-    createCanvas(w, h);
+    if (sketchConfig.fps && 0 <= sketchConfig.fps && sketchConfig.fps <= 60) frameRate(sketchConfig.fps);
+    createCanvas(sketchConfig.sketchW, sketchConfig.sketchH);
 
-    frameRate(fps);
-
-    for (var i = 0; i < randomNodes; i++) {
-        const vertex = graph.addVertex('' + i);
-        vertex.x = Math.random() * rw;
-        vertex.y = Math.random() * rh;
+    for (var i = 0; i < sketchConfig.randomNodes; i++) {
+        const vertex = traveler.graph.addVertex('' + i);
+        vertex.x = Math.random() * sketchConfig.rw;
+        vertex.y = Math.random() * sketchConfig.rh;
     }
+    console.log(traveler.graph);
 
-    /*for (var i = 0; i < randomEdges; i++) {
-        const startpoint = graph.vertices[Math.floor(Math.random() * graph.vertices.length)];
-        const endpoint = graph.vertices[Math.floor(Math.random() * graph.vertices.length)];
-        graph.addEdge(startpoint, endpoint, Math.random() * 10);
-    }*/
+    traveler.calculateDistances();
+    const distanceMatrix = traveler.convertDistancesToMatrix();
+    console.log(distanceMatrix);
+    console.log(JSON.stringify(distanceMatrix._data, null, "\t"));
 
-    //console.log(JSON.stringify(graph, null, "\t"));
-
-    withArrayXY.arrayXY = graph.vertices.slice();
+    //const m = [vertices.length][vertices.length];
+    //console.log(JSON.stringify(m, null, "\t"));
 
     // wait a second before starting
-    delay(1000).then(() => {
-        // wait 0.1 second between each step
-        calculateBestOrder(withArrayXY, 100);
-        // done
-        solved = true;
+    common.delay(sketchConfig.delay).then(() => {
+        traveler.arrayXY = traveler.graph.vertices.slice();
+        // wait 0.1 seconds (stepDelay) between each step
+        common.solveTravelinsSalesmanProblem(traveler, sketchConfig.stepDelay);
+        traveler.solved = true;
     });
 }
 
@@ -48,12 +50,12 @@ function draw() {
     noFill();
     beginShape();
     let distance = 0;
-    for (var i = 0; i < withArrayXY.arrayXY.length - 1; i++) {
-        const from = withArrayXY.arrayXY[i];
-        const to = withArrayXY.arrayXY[i + 1];
-        distance += euclideanDistance(from, to);
-        stroke(255 / withArrayXY.arrayXY.length * i, 0, 255);
-        line(inset + from.x, inset + from.y, inset + to.x, inset + to.y);
+    for (var i = 0; i < traveler.arrayXY.length - 1; i++) {
+        const from = traveler.arrayXY[i];
+        const to = traveler.arrayXY[i + 1];
+        distance += common.euclideanDistance(from, to);
+        stroke(255 / traveler.arrayXY.length * i, 0, 255);
+        line(sketchConfig.sketchInset + from.x, sketchConfig.sketchInset + from.y, sketchConfig.sketchInset + to.x, sketchConfig.sketchInset + to.y);
     }
     endShape();
 
@@ -62,25 +64,28 @@ function draw() {
     fill(255);
     textSize(28);
     textAlign(CENTER, CENTER);
-    text('' + (Math.round(distance * 100) / 100), 70, 24);
+    text('' + round(distance, 2), 70, 24);
 
     fill(0);
-    for (var i = 0; i < withArrayXY.arrayXY.length; i++) {
-        const vertex = withArrayXY.arrayXY[i];
-        ellipse(inset + vertex.x, inset + vertex.y, rr, rr);
+    for (var i = 0; i < traveler.arrayXY.length; i++) {
+        const vertex = traveler.arrayXY[i];
+        ellipse(sketchConfig.sketchInset + vertex.x, sketchConfig.sketchInset + vertex.y, sketchConfig.dotRadius, sketchConfig.dotRadius);
     }
     noFill();
     stroke(255);
-    for (var i = 0; i < withArrayXY.arrayXY.length; i++) {
-        const vertex = withArrayXY.arrayXY[i];
-        ellipse(inset + vertex.x, inset + vertex.y, rr, rr);
+    for (var i = 0; i < traveler.arrayXY.length; i++) {
+        const vertex = traveler.arrayXY[i];
+        ellipse(sketchConfig.ketchInset + vertex.x, sketchConfig.sketchInset + vertex.y, sketchConfig.dotRadius, sketchConfig.dotRadius);
     }
 
     strokeWeight(1);
     textSize(12);
     textAlign(CENTER, CENTER);
-    for (var i = 0; i < graph.vertices.length; i++) {
-        const vertex = graph.vertices[i];
-        text('' + i, inset + vertex.x, inset + vertex.y);
+    for (var i = 0; i < traveler.graph.vertices.length; i++) {
+        const vertex = traveler.graph.vertices[i];
+        text('' + i, sketchConfig.sketchInset + vertex.x, sketchConfig.sketchInset + vertex.y);
     }
 }
+
+window.setup = setup;
+window.draw = draw;
