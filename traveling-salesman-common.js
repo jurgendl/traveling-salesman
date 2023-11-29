@@ -1,4 +1,4 @@
-export { delay, Graph, Vertex, Edge, TravelingSalesman };
+export { shuffle, delay, Graph, Vertex, Edge, TravelingSalesman, Population };
 
 /* The `delay` function is a helper function that returns a promise that resolves after a
 specified amount of time. It is used to introduce a delay or pause in the execution of
@@ -14,7 +14,7 @@ matrix, and solve the problem by finding the best order in which to visit the ve
 minimizing the total distance traveled. */
 class TravelingSalesman {
     /*const*/ graph = new Graph();
-    /*const*/ arrayXY = [];
+    /*let*/ population = null;
     /*let*/ solved = false;
     /*let*/ distanceMatrix = null;
 
@@ -61,29 +61,29 @@ class TravelingSalesman {
     function uses the `euclideanDistance` function to calculate the distance between two
     vertices. The process continues until all vertices have been visited. */
     async /*function*/ solve(stepDelay = -1) {
-        if (this.solved) return this.arrayXY;
-        this.arrayXY = this.graph.vertices.slice();
+        if (this.solved) return this.population;
+        this.population = new Population(this.graph.vertices.slice());
         const newOrder = [];
-        const start = this.arrayXY[0];
+        const start = this.population.order[0];
         newOrder.push(start);
-        this.arrayXY.splice(0, 1);
-        while (this.arrayXY.length > 0) {
+        this.population.order.splice(0, 1);
+        while (this.population.order.length > 0) {
             let nearest = null;
             let nearestDistance = Number.MAX_VALUE;
-            for (var i = 0; i < this.arrayXY.length; i++) {
-                const distance = this.cachedEuclideanDistance(newOrder[newOrder.length - 1], this.arrayXY[i]);
+            for (var i = 0; i < this.population.order.length; i++) {
+                const distance = this.cachedEuclideanDistance(newOrder[newOrder.length - 1], this.population.order[i]);
                 if (distance < nearestDistance) {
-                    nearest = this.arrayXY[i];
+                    nearest = this.population.order[i];
                     nearestDistance = distance;
                 }
             }
             if (stepDelay && stepDelay > 0) await delay(stepDelay);
             newOrder.push(nearest);
-            this.arrayXY.splice(this.arrayXY.indexOf(nearest), 1);
+            this.population.order.splice(this.population.order.indexOf(nearest), 1);
         }
-        this.arrayXY = newOrder;
+        this.population.order = newOrder;
         this.solved = true;
-        return this.arrayXY;
+        return this.population;
     }
 
     /* The `euclideanDistance` function calculates the Euclidean distance between two points in a
@@ -96,9 +96,168 @@ class TravelingSalesman {
         return sqrt(pow(from.x - to.x, 2) + pow(from.y - to.y, 2));
     }
 
-    cachedEuclideanDistance(from, to) {
+    /*function*/ cachedEuclideanDistance(from, to) {
         return this.distanceMatrix._data[Number(from.name)][Number(to.name)];
     }
+
+    // ========================================================================
+
+    async /*function*/ solveWithGeneticAlgorithm(populations, generations, mutationRate, stepDelay = -1) {
+        for (let i = 0; i < generations; i++) {
+            // normalize fitness
+            this.calculateFitness(populations);
+            // sort populations by fitness
+            this.sortPopulations(populations);
+            // keep track of best population
+            if (!this.population.order.weight || populations[0].weight < this.population.order.weight) this.population = populations[0];
+            if ((i + 1) < generations) {
+                // wait for stepDelay
+                if (stepDelay && stepDelay > 0 && generations > 1) await delay(stepDelay);
+                // create new population
+                populations = this.evolve(populations, mutationRate);
+            }
+        }
+    }
+
+    /*function*/ calculateFitness(populations) {
+        console.log(populations);
+        let minWeight = Number.MAX_VALUE;
+        let maxWeight = 0;
+        for (let i = 0; i < populations.length; i++) {
+            const population = populations[i];
+            if (population.weight < minWeight) minWeight = population.weight;
+            if (population.weight > maxWeight) maxWeight = population.weight;
+        }
+        console.log(minWeight, maxWeight);
+        for (let i = 0; i < populations.length; i++) {
+            const population = populations[i];
+            population.fitness = map(population.weight, minWeight, maxWeight, 1, 0.01);
+        }
+        console.log(populations);
+        let sum = 0;
+        for (let i = 0; i < populations.length; i++) {
+            const population = populations[i];
+            sum += population.fitness;
+        }
+        console.log(sum);
+        let sum2 = 0;
+        for (let i = 0; i < populations.length; i++) {
+            const population = populations[i];
+            population.fitness = population.fitness / sum;
+            sum2 += population.fitness;
+        }
+        console.log(populations);
+        console.log(sum2);
+        return populations;
+    }
+
+    /*function*/ sortPopulations(populations) {
+        populations.sort((a, b) => - a.fitness + b.fitness);
+        return populations;
+    }
+
+    /*function*/ evolve(populations, mutationRate) {
+        const newPopulations = [];
+        for (let i = 0; i < populations.length; i++) {
+            let newPopulation = new Population();
+            newPopulation = new Population(this.pick(populations).order); //xxx
+            //this.crossover(newPopulation, this.pick(populations), this.pick(populations));//xxx
+            newPopulation = this.mutate(newPopulation, mutationRate);
+            newPopulation.weight = this.calculateWeight(newPopulation.order);
+            newPopulations.push(newPopulation);
+        }
+        return newPopulations;
+    }
+
+    /* The `pick` function is used in the genetic algorithm to select a population from the
+    current generation based on their fitness. It randomly selects a population with a
+    probability proportional to its fitness. The higher the fitness, the higher the chance of
+    being selected. */
+    /*function*/ pick(populations) {
+        let index = 0;
+        let r = random(1);
+        while (r > 0) {
+            if (!populations[index]) {
+                debugger;
+            }
+            r = r - populations[index].fitness;
+            index++;
+        }
+        index--;
+        return populations[index];
+    }
+
+    /*function*/ crossover(newPopulation, firstCandidate, secondCandidate) {
+        const crossoverPoint = floor(random(firstCandidate.order.length));
+        for (let i = 0; i < crossoverPoint; i++) {
+            newPopulation.order[i] = firstCandidate.order[i];
+        }
+        for (let i = crossoverPoint; i < secondCandidate.order.length; i++) {
+            newPopulation.order[i] = secondCandidate.order[i];
+        }
+        return newPopulation;
+    }
+
+    /*function*/ mutate(population, mutationRate) {
+        for (let i = 0; i < population.order.length; i++) {
+            if (random(1) < mutationRate) {
+                let indexA = floor(random(population.order.length));
+                let indexB = (indexA + 1) % population.order.length;
+                if (indexA == 0) {
+                    indexA++;
+                    indexB++;
+                }
+                swap(population.order, indexA, indexB);
+            }
+        }
+        return population;
+    }
+
+    /*function*/ calculateWeight(vertices) {
+        let sum = 0;
+        for (let i = 0; i < vertices.length - 1; i++) {
+            sum += this.cachedEuclideanDistance(vertices[i], vertices[i + 1]);
+        }
+        return sum;
+    }
+}
+
+class Population {
+    order = [];
+    weight;
+    fitness;
+
+    constructor(order) {
+        if (order) this.order = order;
+    }
+}
+
+function swap(arr, i, j) {
+    const temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
+}
+
+/* The `shuffle` function is implementing the Fisher-Yates Shuffle algorithm. It takes an
+array as input and shuffles the elements in a random order. The function iterates through
+the array from the last element to the first, and at each iteration, it selects a random
+index between 0 and the current index. It then swaps the element at the current index with
+the element at the randomly selected index. This process continues until all elements have
+been shuffled. Finally, the function returns the shuffled array. */
+function shuffle(array) {
+    //  Fisher-Yates Shuffle Algorithm
+    // https://bost.ocks.org/mike/shuffle/
+    var m = array.length, t, i;
+    // While there remain elements to shuffle…
+    while (m) {
+        // Pick a remaining element…
+        i = Math.floor(Math.random() * m--);
+        // And swap it with the current element.
+        t = array[m];
+        array[m] = array[i];
+        array[i] = t;
+    }
+    return array;
 }
 
 /* The `class Graph` is a representation of a graph data structure. It has properties `edges` and
